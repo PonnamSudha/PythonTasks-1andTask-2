@@ -2,86 +2,93 @@ import os
 import pickle
 import datetime
 
-# Define the Transaction class
-class Transaction:
-    def __init__(self, category, amount, date=None):
-        self.category = category
-        self.amount = amount
-        self.date = date if date else datetime.date.today()
+# Define task class
+class Task:
+    def __init__(self, title, priority, due_date=None):
+        self.title = title
+        self.priority = priority
+        self.due_date = due_date
+        self.completed = False
 
-# Define the BudgetTracker class
-class BudgetTracker:
+# Define the ToDoList class
+class ToDoList:
     def __init__(self):
-        self.transactions = []
+        self.tasks = []
 
-    def add_transaction(self, category, amount):
-        transaction = Transaction(category, amount)
-        self.transactions.append(transaction)
+    def add_task(self, title, priority, due_date=None):
+        task = Task(title, priority, due_date)
+        self.tasks.append(task)
 
-    def calculate_budget(self, income):
-        expenses = sum(transaction.amount for transaction in self.transactions if transaction.amount < 0)
-        remaining_budget = income + expenses
-        return remaining_budget
+    def remove_task(self, index):
+        if 0 <= index < len(self.tasks):
+            del self.tasks[index]
+        else:
+            print("Invalid task index.")
 
-    def analyze_expenses(self):
-        expense_categories = set(transaction.category for transaction in self.transactions if transaction.amount < 0)
-        expense_summary = {category: sum(transaction.amount for transaction in self.transactions if
-                                          transaction.category == category and transaction.amount < 0)
-                           for category in expense_categories}
-        return expense_summary
+    def mark_task_as_completed(self, index):
+        if 0 <= index < len(self.tasks):
+            self.tasks[index].completed = True
+        else:
+            print("Invalid task index.")
+
+    def list_tasks(self):
+        for index, task in enumerate(self.tasks):
+            status = "Completed" if task.completed else "Incomplete"
+            due_date = task.due_date.strftime("%Y-%m-%d") if task.due_date else "N/A"
+            print(f"{index+1}. Title: {task.title} | Priority: {task.priority} | Due Date: {due_date} | Status: {status}")
 
     def save_to_file(self, filename):
         with open(filename, 'wb') as f:
-            pickle.dump(self.transactions, f)
+            pickle.dump(self.tasks, f)
 
     def load_from_file(self, filename):
         if os.path.exists(filename):
             with open(filename, 'rb') as f:
-                self.transactions = pickle.load(f)
+                self.tasks = pickle.load(f)
 
 # Main function
 def main():
-    budget_tracker = BudgetTracker()
-    data_file = "transactions.pickle"
+    todo_list = ToDoList()
+    data_file = "tasks.pickle"
 
-    # Load transactions from file, if it exists
-    budget_tracker.load_from_file(data_file)
+    # Load tasks from file, if it exists
+    todo_list.load_from_file(data_file)
 
     while True:
-        print("\n*** Budget Tracker ***")
-        print("1. Add Income")
-        print("2. Add Expense")
-        print("3. Calculate Budget")
-        print("4. Analyze Expenses")
+        print("\n*** To-Do List ***")
+        print("1. Add Task")
+        print("2. Remove Task")
+        print("3. Mark Task as Completed")
+        print("4. List Tasks")
         print("5. Save and Quit")
 
         choice = input("Enter your choice: ")
 
         if choice == '1':
-            income = float(input("Enter income amount: "))
-            budget_tracker.add_transaction("Income", income)
-            print("Income added successfully.")
+            title = input("Enter task title: ")
+            priority = input("Enter task priority (high, medium, low): ")
+            due_date_str = input("Enter due date (YYYY-MM-DD) or leave empty: ")
+            due_date = datetime.datetime.strptime(due_date_str, "%Y-%m-%d") if due_date_str else None
+            todo_list.add_task(title, priority, due_date)
+            print("Task added successfully.")
 
         elif choice == '2':
-            category = input("Enter expense category: ")
-            amount = float(input("Enter expense amount: "))
-            budget_tracker.add_transaction(category, -amount)
-            print("Expense added successfully.")
+            index = int(input("Enter task index to remove: ")) - 1
+            todo_list.remove_task(index)
+            print("Task removed successfully.")
 
         elif choice == '3':
-            income = float(input("Enter current total income: "))
-            remaining_budget = budget_tracker.calculate_budget(income)
-            print(f"Remaining budget: ${remaining_budget:.2f}")
+            index = int(input("Enter task index to mark as completed: ")) - 1
+            todo_list.mark_task_as_completed(index)
+            print("Task marked as completed.")
 
         elif choice == '4':
-            expense_summary = budget_tracker.analyze_expenses()
-            for category, amount in expense_summary.items():
-                print(f"Category: {category} | Total Expense: ${amount:.2f}")
+            todo_list.list_tasks()
 
         elif choice == '5':
-            budget_tracker.save_to_file(data_file)
-            print("Transactions saved. Goodbye!")
+            todo_list.save_to_file(data_file)
+            print("Tasks saved. Goodbye!")
             break
 
 if __name__ == "__main__":
-    main()
+    main() 
